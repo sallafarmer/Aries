@@ -62,6 +62,7 @@ object ZoneProcessor {
           else Double.NaN
         }
 
+
     ndviTile
   }
 

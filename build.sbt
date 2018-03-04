@@ -30,11 +30,15 @@ libraryDependencies ++= Seq(
   "com.microsoft.azure" % "azure-storage" % "6.1.0" exclude("org.slf4j","slf4j-log4j12"),
   "org.apache.hadoop" % "hadoop-azure" % "3.0.0" exclude("org.slf4j","slf4j-log4j12"),
 
+  "org.scalanlp" %% "breeze" % "1.0-RC2",
+
   "org.scalatest"         %%  "scalatest"       % "2.2.0" % Test,
 
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "org.slf4j" % "log4j-over-slf4j" % "1.7.25",
-  "org.slf4j" % "slf4j-log4j12" % "1.7.25" % "provided"
+  "org.slf4j" % "slf4j-log4j12" % "1.7.25" % "provided",
+
+  "black.ninia" % "jep" % "3.7.1"
 
 )
 
