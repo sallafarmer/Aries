@@ -5,6 +5,7 @@ import com.farmersedge.aries.core.ZoneProcessor.{bandsToIndexes, readTiff}
 import scala.collection.mutable.ArrayBuffer
 
 case class RGB(r: Double, g: Double, b: Double)
+case class GRAY(g: Double)
 case class HSV(h: Double, s: Double, v: Double)
 case class LAB(l: Double, a: Double, b: Double)
 case class XYZ(x: Double, y: Double, z: Double)
@@ -54,9 +55,8 @@ object ColorConversions {
       h = 4.0 + (rgb.r - rgb.g) / delta // between magenta & cyan
     }
 
-    h *= 60.0 // degrees
+    h /= 6
 
-    if (h < 0.0) h += 360.0
     HSV(h, s, v)
   }
 
@@ -160,9 +160,9 @@ object ColorConversions {
     var z = xyz.z / 1.08883
 
 
-    x = if (x > 0.008856) Math.pow(x, 1.0/3.0) else (7.787 * x) + 16/116
-    y = if (y > 0.008856) Math.pow(y, 1.0/3.0) else (7.787 * y) + 16/116
-    z = if (z > 0.008856) Math.pow(z, 1.0/3.0) else (7.787 * z) + 16/116
+    x = if (x > 0.008856) Math.pow(x, 1.0/3.0) else (7.787 * x) + 16.0/116.0
+    y = if (y > 0.008856) Math.pow(y, 1.0/3.0) else (7.787 * y) + 16.0/116.0
+    z = if (z > 0.008856) Math.pow(z, 1.0/3.0) else (7.787 * z) + 16.0/116.0
 
     LAB((116 * y) - 16, 500 * (x - y), 200 * (y - z))
   }
@@ -181,6 +181,11 @@ object ColorConversions {
 
 
   }
+
+  def rgb2gray(rgb: RGB): GRAY ={
+    GRAY(0.2125 * rgb.r + 0.7154 * rgb.g + 0.0721 * rgb.b)
+  }
+
 
   def rgb2lab(rgb: RGB): LAB ={
     val xyz = rgb2xyz(rgb)
@@ -292,6 +297,17 @@ object ColorConversions {
         lab
       }
     labs
+  }
+
+  def rgb2gray(rgbs: Array[RGB]): Array[GRAY] ={
+
+    val grays = for { rgb <- rgbs}
+      yield {
+        val gray = rgb2gray(rgb)
+
+        gray
+      }
+    grays
   }
 
 

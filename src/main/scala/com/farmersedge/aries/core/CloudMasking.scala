@@ -2,6 +2,7 @@ package com.farmersedge.aries.core
 
 import com.farmersedge.aries.core.ColorConversions.makeRGBArray
 import com.farmersedge.aries.core.ZoneProcessor.{bandsToIndexes, ndvi, readTiff}
+import com.farmersedge.aries.opencv.Watershed
 import geotrellis.raster.Tile
 
 import scala.collection.mutable
@@ -74,14 +75,20 @@ object CloudMasking {
 
     val rgbs = ColorConversions.makeRGBArray(red_band, green_band, blue_band)
 
-
+  /*  val hsv = ColorConversions.rgb2hsv(rgbs.head)
+    val lab = ColorConversions.rgb2lab(rgbs.head)
+    val xyz = ColorConversions.rgb2xyz(rgbs.head)
+    val clab = ColorConversions.xyz2lab(xyz)
+*/
     val hsvs = ColorConversions.rgb2hsv(rgbs)
 
     val labs = ColorConversions.rgb2lab(rgbs)
     val xyzs = ColorConversions.rgb2xyz(rgbs)
     val clabs = ColorConversions.xyz2lab(xyzs)
 
-    Clahe.run(hsvs, (rows, cols))
+    val claheRGB = Clahe.run(hsvs, (rows, cols))
+
+//    val clusters = Watershed.run(claheRGB)
 
     println("done")
   }

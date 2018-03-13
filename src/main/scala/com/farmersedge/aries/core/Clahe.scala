@@ -4,8 +4,8 @@ object Clahe {
 
   val NR_OF_GREY = Math.pow(2, 14) // number of grayscale levels to use in CLAHE algorithm
 
-  def img_as_uint(in: Array[Array[Double]]): Array[Array[Int]] = {
-    in.map(_.map(x => (x * 65535.0).toInt))
+  def img_as_uint(in: Array[Array[Double]]): Array[Array[Double]] = {
+    in.map(_.map(x => (x * 65535.0).toDouble))
   }
 
   def img_as_double(in: Array[Array[Int]]): Array[Array[Double]] = {
@@ -31,9 +31,9 @@ object Clahe {
 
     val nbins = 256
 
-    //    val vgrid1 = img_as_uint(vgridIn)
+    val vgrid1 = img_as_uint(vgridIn)
 
-    val vgrid2 = rescale_intensity(vgridIn, NR_OF_GREY - 1)
+    val vgrid2 = rescale_intensity(vgrid1, NR_OF_GREY - 1)
 
     val kernel_size = (shape._1 / 8, shape._2 / 8)
 
@@ -64,20 +64,109 @@ object Clahe {
     cmHist
   }
 
+  def clip_histogram(hist: Array[Int], clip_limit: Double): Array[Int] = {
+    val excess_mask = for {
+      h <- hist
+    } yield {
+      if (h > clip_limit) true else false
+    }
+
+    val excess_mask_hist = hist.zip(excess_mask).collect{case (h, true) => h}
+
+    val excess_sum = excess_mask_hist.sum
+
+    var n_excess = excess_sum - excess_mask_hist.size * clip_limit
+
+
+    // Second part: clip histogram and redistribute excess pixels in each bin
+    val bin_incr = n_excess.toInt/hist.size  //average binincrement
+    val upper = clip_limit - bin_incr  //Bins larger than upper set to cliplimit
+
+    val low_mask = for {
+      h <- hist
+    } yield {
+      if (h < upper) true else false
+    }
+    val low_mask_hist = hist.zip(low_mask).collect{case (h, true) => h}
+
+    val mid_mask = for {
+      h <- hist
+    } yield {
+      if (h >= upper && h < clip_limit) true else false
+    }
+
+    val mid_mask_hist = hist.zip(mid_mask).collect{case (h, true) => h}
+
+    var clippedHist = for {
+      h <- hist
+
+    } yield {
+      if (h >= upper) clip_limit.toInt else h+bin_incr
+    }
+
+
+    n_excess = n_excess - low_mask_hist.size * bin_incr
+    n_excess = n_excess - mid_mask_hist.size * clip_limit - mid_mask_hist.sum
+
+    var prev_n_excess = n_excess
+
+    var breakloop = false
+    while (n_excess > 0 && !breakloop) {
+      //# Redistribute remaining excess
+      var index = 0
+      while (n_excess > 0 && index < hist.size) {
+
+        val clip_mask = for {
+          h <- clippedHist
+        } yield {
+          if (h < clip_limit) true else false
+        }
+        val clip_mask_hist = clippedHist.zip(clip_mask).collect{case (h, true) => h}
+
+        var step_size = (clip_mask_hist.size / n_excess.toInt)
+        step_size = Math.max(step_size, 1)
+
+        var under_mask = for {
+          h <- clippedHist
+        } yield {
+          if (h < 0) true else false
+        }
+        for(i <- index until clippedHist.size by step_size) {
+          under_mask(i) = true
+        }
+
+        under_mask = under_mask.zip(clip_mask).collect{case (l,r) => l && r}
+
+        val under_mask_hist = clippedHist.zip(under_mask).collect{case (h, true) => h}
+        clippedHist = clippedHist.zip(under_mask).collect{case (h, u) => if (u) h+1 else h}
+
+        n_excess = n_excess - under_mask_hist.sum
+        index += 1
+      }
+
+      if (prev_n_excess == n_excess)
+        breakloop = true
+      prev_n_excess = n_excess
+    }
+
+
+    clippedHist
+  }
+
   def runClahe(image: Array[Array[Double]],
                shape: (Int, Int),
                kernel_size: (Int, Int),
                clip_limit: Double,
                nbins: Int): Array[Array[Double]] = {
 
-    val nr: Int = (Math.ceil(shape._1 / kernel_size._1)).toInt
-    val nc: Int = (Math.ceil(shape._2 / kernel_size._2)).toInt
+    val nr: Int = (Math.ceil(shape._1.toDouble / kernel_size._1.toDouble)).toInt
+    val nc: Int = (Math.ceil(shape._2.toDouble / kernel_size._2.toDouble)).toInt
 
     val row_step: Int = (Math.floor(shape._1 / nr)).toInt
     val col_step: Int = (Math.floor(shape._2 / nc)).toInt
 
     val bin_size = 1 + NR_OF_GREY / nbins
-    val lut = (0 until NR_OF_GREY.toInt) //.map(_/bin_size)
+    val lut = (0 until NR_OF_GREY.toInt).map(_/bin_size).map(_.toInt)
 
     val map_array = Array.ofDim[Int](nr, nc, nbins)
 
@@ -104,7 +193,9 @@ object Clahe {
 
       val sortedHist = hist.toSeq.sortBy(_._1).map(_._2).toArray
 
-      val cmHist = map_histogram(sortedHist, row_step * col_step)
+      val clippedHist = clip_histogram(sortedHist, clim)
+
+      val cmHist = map_histogram(clippedHist, row_step * col_step)
 
       map_array(r)(c) = cmHist
 
@@ -160,8 +251,8 @@ object Clahe {
         val mapLB = map_array(rB)(cL)
         val mapRB = map_array(rB)(cR)
 
-        val cslice = (cstart.toInt until cstart.toInt + c_offset.toInt).toArray
-        val rslice = (rstart.toInt until rstart.toInt + r_offset.toInt).toArray
+        val cslice = (cstart.toInt to cstart.toInt + c_offset.toInt).toArray
+        val rslice = (rstart.toInt to rstart.toInt + r_offset.toInt).toArray
 
         interpolate(image, cslice, rslice, mapLU, mapRU, mapLB, mapRB, lut.toArray)
 
@@ -180,9 +271,79 @@ object Clahe {
                   mapRU: Array[Int],
                   mapLB: Array[Int],
                   mapRB: Array[Int],
-                  lut: Array[Double]): Array[Array[Double]] = {
+                  lut: Array[Int]): Array[Array[Double]] = {
 
-    return image
+    //Find the new grayscale level for a region using bilinear interpolation.
+    /*
+    Parameters
+    ----------
+    image : ndarray
+        Full image.
+    xslice, yslice : array-like
+       Indices of the region.
+    map* : ndarray
+        Mappings of greylevels from histograms.
+    lut : ndarray
+        Maps grayscale levels in image to histogram levels.
+
+    Returns
+    -------
+    out : ndarray
+        Original image with the subregion replaced.
+
+    Notes
+    -----
+    This function calculates the new greylevel assignments of pixels within
+    a submatrix of the image. This is done by a bilinear interpolation between
+    four different mappings in order to eliminate boundary artifacts.
+     */
+
+    val norm = xslice.size * yslice.size  //Normalization factor
+
+    val meshGrid = for {
+      y <- yslice
+      x <- xslice
+    } yield {
+      (x, y)
+    }
+
+    val x_coef = meshGrid.map(_._1).toArray.grouped(xslice.size).toArray
+    val y_coef = meshGrid.map(_._2).toArray.grouped(xslice.size).toArray
+
+    val x_inv_coef = x_coef.map(rows => rows.reverse.map(_+1))
+    val y_inv_coef = y_coef.reverse.map(rows => rows.map(_+1))
+
+    val view = image
+      .map(_.slice(xslice(0), xslice.last+1))
+      .slice(yslice(0), yslice.last+1)
+
+    val im_slice = view.map(_.map(c => (c/65).toInt))
+
+    val newImage = Array.ofDim[Double](yslice.size, xslice.size)
+
+    for {
+      y <- 0 until yslice.size
+      x <- 0 until xslice.size
+    } yield {
+      val im_sliceYX = im_slice(y)(x)
+
+   newImage(y)(x)  = ((y_inv_coef(y)(x) * (x_inv_coef(y)(x) * mapLU(im_sliceYX)
+       + x_coef(y)(x) * mapRU(im_sliceYX))
+       + y_coef(y)(x) * (x_inv_coef(y)(x) * mapLB(im_sliceYX)
+       + x_coef(y)(x) * mapRB(im_sliceYX)))
+       / norm)
+    }
+    /*
+      new = ((y_inv_coef * (x_inv_coef * mapLU[im_slice]
+                          + x_coef * mapRU[im_slice])
+            + y_coef * (x_inv_coef * mapLB[im_slice]
+                        + x_coef * mapRB[im_slice]))
+           / norm)
+    view[:, :] = new
+
+     */
+
+    return newImage
   }
 
   def run(hsvs: Array[HSV], shape: (Int, Int)): Array[RGB] = {
@@ -194,15 +355,24 @@ object Clahe {
       r <- 0 until shape._1
       c <- 0 until shape._2
     } yield {
-      val k = r * shape._1 + c
+      val k = r * shape._2 + c
       vgrid(r)(c) = hsvs(k).v
     }
 
     //  equalize_adapthist on the vgrid
-    equalize_adapthist(vgrid, shape, 0.04)
+    val vgridout = equalize_adapthist(vgrid, shape, 0.04)
 
     //modify hsvs
-    ColorConversions.hsv2rgb(hsvs)
+    var hsvsOut = for {
+      r <- 0 until shape._1
+      c <- 0 until shape._2
+    } yield {
+      val k = r * shape._1 + c
+      HSV(hsvs(k).h , hsvs(k).s , vgridout(r)(c))
+    }
+
+
+    ColorConversions.hsv2rgb(hsvsOut.toArray)
   }
 
   /*
