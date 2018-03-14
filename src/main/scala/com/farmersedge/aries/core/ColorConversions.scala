@@ -244,7 +244,7 @@ object ColorConversions {
         val rgb = hsv2rgb(hsv)
         val hsv2 = rgb2hsv(rgb)
         if (Math.abs(hsv.h - hsv2.h) > 0.2 || Math.abs(hsv.s - hsv2.s) > 0.2 || Math.abs(hsv.v - hsv2.v) > 0.2) {
-          println("hsv2rgb: " + hsv + " -> " + rgb + " -> " + hsv2)
+         // println("hsv2rgb: " + hsv + " -> " + rgb + " -> " + hsv2)
 
         }
         rgb

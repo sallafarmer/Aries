@@ -39,10 +39,12 @@ object Clahe {
 
     val vgrid3 = runClahe(vgrid2, shape, kernel_size, clip_limit * nbins, nbins)
 
-    //   val vgrid3 = img_as_double(vgrid2)
-    val vgrid4 = rescale_intensity(vgrid3, 65535.0)
+    val vgrid4 = vgrid3.map(_.map(x => (x /65535.0).toDouble))
 
-    vgrid4
+    //   val vgrid3 = img_as_double(vgrid2)
+    val vgrid5 = rescale_intensity(vgrid4, 1.0)
+
+    vgrid5
   }
 
   def map_histogram(hist: Array[Int], n_pixels: Int): Array[Int] = {
@@ -178,9 +180,10 @@ object Clahe {
         .map(_.slice(c * col_step, (c + 1) * col_step))
         .slice(r * row_step, (r + 1) * row_step)
 
+      val s = clip_limit * col_step.toDouble * row_step.toDouble
       val clim =
         if (clip_limit > 0.0) // Calculate actual cliplimit
-          (clip_limit * col_step * row_step / nbins).toInt
+          Math.ceil(clip_limit * col_step.toDouble * row_step.toDouble / nbins.toDouble).toInt
         else NR_OF_GREY
 
       val emptyHistogram = (0 until nbins).map(_ -> 0).toMap
@@ -251,10 +254,19 @@ object Clahe {
         val mapLB = map_array(rB)(cL)
         val mapRB = map_array(rB)(cR)
 
-        val cslice = (cstart.toInt to cstart.toInt + c_offset.toInt).toArray
-        val rslice = (rstart.toInt to rstart.toInt + r_offset.toInt).toArray
+        val cslice = (cstart until cstart + c_offset by 1d).toArray
+        val rslice = (rstart until rstart + r_offset by 1d).toArray
 
-        interpolate(image, cslice, rslice, mapLU, mapRU, mapLB, mapRB, lut.toArray)
+        val newImage = interpolate(image, cslice, rslice, mapLU, mapRU, mapLB, mapRB, lut.toArray)
+
+        //update image with the new interpolated image
+
+        for {
+          y <- rslice.indices
+          x <- cslice.indices
+        } yield {
+          image(rslice(y).toInt)(cslice(x).toInt) = newImage(y.toInt)(x.toInt).toInt
+        }
 
         cstart += c_offset
       }
@@ -265,8 +277,8 @@ object Clahe {
   }
 
   def interpolate(image: Array[Array[Double]],
-                  xslice: Array[Int],
-                  yslice: Array[Int],
+                  xslice: Array[Double],
+                  yslice: Array[Double],
                   mapLU: Array[Int],
                   mapRU: Array[Int],
                   mapLB: Array[Int],
@@ -301,8 +313,8 @@ object Clahe {
     val norm = xslice.size * yslice.size  //Normalization factor
 
     val meshGrid = for {
-      y <- yslice
-      x <- xslice
+      y <- 0 until yslice.size
+      x <- 0 until xslice.size
     } yield {
       (x, y)
     }
@@ -314,12 +326,25 @@ object Clahe {
     val y_inv_coef = y_coef.reverse.map(rows => rows.map(_+1))
 
     val view = image
-      .map(_.slice(xslice(0), xslice.last+1))
-      .slice(yslice(0), yslice.last+1)
+      .map(_.slice(xslice(0).toInt, xslice.last.toInt+1))
+      .slice(yslice(0).toInt, yslice.last.toInt+1)
 
     val im_slice = view.map(_.map(c => (c/65).toInt))
 
     val newImage = Array.ofDim[Double](yslice.size, xslice.size)
+
+    val x = 0
+    val y = 0
+    val im_sliceYX = im_slice(y)(x)
+    val z1 = y_inv_coef(y)(x)
+    val z2 = x_inv_coef(y)(x)
+    val z3 = y_coef(y)(x)
+    val z4 = x_coef(y)(x)
+    val z5 = im_sliceYX
+    val z6 = mapLU(im_sliceYX)
+    val z7 = mapRU(im_sliceYX)
+    val z8 = mapLB(im_sliceYX)
+    val z9 = mapRB(im_sliceYX)
 
     for {
       y <- 0 until yslice.size
@@ -327,12 +352,15 @@ object Clahe {
     } yield {
       val im_sliceYX = im_slice(y)(x)
 
+
+
    newImage(y)(x)  = ((y_inv_coef(y)(x) * (x_inv_coef(y)(x) * mapLU(im_sliceYX)
        + x_coef(y)(x) * mapRU(im_sliceYX))
        + y_coef(y)(x) * (x_inv_coef(y)(x) * mapLB(im_sliceYX)
        + x_coef(y)(x) * mapRB(im_sliceYX)))
        / norm)
     }
+
     /*
       new = ((y_inv_coef * (x_inv_coef * mapLU[im_slice]
                           + x_coef * mapRU[im_slice])
