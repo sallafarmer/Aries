@@ -1,7 +1,15 @@
 package com.farmersedge.aries.core
 
 import geotrellis.raster
-import geotrellis.raster.{DoubleCellType, DoubleConstantNoDataCellType, IntCellType, MultibandTile, Raster, Tile, isData}
+import geotrellis.raster.{
+  DoubleCellType,
+  DoubleConstantNoDataCellType,
+  IntCellType,
+  MultibandTile,
+  Raster,
+  Tile,
+  isData
+}
 import geotrellis.raster.io.geotiff.MultibandGeoTiff
 import geotrellis.raster.io.geotiff.reader.GeoTiffReader
 import geotrellis.raster.mapalgebra.focal.TargetCell.NoData
@@ -42,7 +50,7 @@ object ZoneProcessor {
 
   }
 
-  def genMaskedBand(band: Tile, zoneArray: Array[Tile]): Array[Tile] ={
+  def genMaskedBand(band: Tile, zoneArray: Array[Tile]): Array[Tile] = {
     val maskedBandArr = for {
       z <- zoneArray
     } yield {
@@ -55,18 +63,17 @@ object ZoneProcessor {
   def ndvi(red_band: Tile, nir_band: Tile): Tile = {
 
     val ndviTile =
-      red_band.convert(DoubleConstantNoDataCellType)
-        .combineDouble(nir_band.convert(DoubleConstantNoDataCellType)){(r:Double, nir:Double) =>
-          if (isData(r) && isData(nir))
-            ((nir - r) / (nir + r))*10000
-          else Double.NaN
+      red_band
+        .convert(DoubleConstantNoDataCellType)
+        .combineDouble(nir_band.convert(DoubleConstantNoDataCellType)) {
+          (r: Double, nir: Double) =>
+            if (isData(r) && isData(nir))
+              ((nir - r) / (nir + r)) * 10000
+            else Double.NaN
         }
-
 
     ndviTile
   }
-
-
 
   def generateNDVIPerZone(tiffFile: String, zoneMapFile: String): Unit = {
     val zones = readTiff(zoneMapFile)
@@ -89,7 +96,7 @@ object ZoneProcessor {
     val nir_maskedBandArr = genMaskedBand(nir_band, zoneArray)
 
     val ndvis = for {
-      (r,n) <- red_maskedBandArr zip nir_maskedBandArr
+      (r, n) <- red_maskedBandArr zip nir_maskedBandArr
     } yield {
       ndvi(r, n)
     }

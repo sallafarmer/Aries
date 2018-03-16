@@ -71,12 +71,11 @@ object ColorConversions {
     var g = .0
     var b = .0
 
-
     if (hsv.s <= 0.0) { // < is bogus, just shuts up warnings
       r = hsv.v
       g = hsv.v
       b = hsv.v
-      return RGB(r,g,b)
+      return RGB(r, g, b)
     }
     hh = hsv.h
     if (hh >= 360.0) hh = 0.0
@@ -115,10 +114,10 @@ object ColorConversions {
         b = q
 
     }
-    RGB(r,g,b)
+    RGB(r, g, b)
   }
 
-  def rgb2xyz(rgb: RGB): XYZ ={
+  def rgb2xyz(rgb: RGB): XYZ = {
     var r = rgb.r
     var g = rgb.g
     var b = rgb.b
@@ -134,35 +133,34 @@ object ColorConversions {
     XYZ(x, y, z)
   }
 
-  def xyz2rgb(xyz: XYZ): RGB={
+  def xyz2rgb(xyz: XYZ): RGB = {
     val x = xyz.x
     val y = xyz.y
     val z = xyz.z
 
-    var r = x *  3.2406 + y * -1.5372 + z * -0.4986
-    var g = x * -0.9689 + y *  1.8758 + z *  0.0415
-    var b = x *  0.0557 + y * -0.2040 + z *  1.0570
+    var r = x * 3.2406 + y * -1.5372 + z * -0.4986
+    var g = x * -0.9689 + y * 1.8758 + z * 0.0415
+    var b = x * 0.0557 + y * -0.2040 + z * 1.0570
 
-    r = if (r > 0.0031308) (1.055 * Math.pow(r, 1/2.4) - 0.055) else 12.92 * r
-    g = if (g > 0.0031308) (1.055 * Math.pow(g, 1/2.4) - 0.055) else 12.92 * g
-    b = if (b > 0.0031308) (1.055 * Math.pow(b, 1/2.4) - 0.055) else 12.92 * b
+    r = if (r > 0.0031308) (1.055 * Math.pow(r, 1 / 2.4) - 0.055) else 12.92 * r
+    g = if (g > 0.0031308) (1.055 * Math.pow(g, 1 / 2.4) - 0.055) else 12.92 * g
+    b = if (b > 0.0031308) (1.055 * Math.pow(b, 1 / 2.4) - 0.055) else 12.92 * b
 
-    RGB(r,g,b)
- /*   RGB(Math.max(0, Math.min(1, r)),
+    RGB(r, g, b)
+    /*   RGB(Math.max(0, Math.min(1, r)),
       Math.max(0, Math.min(1, g)),
       Math.max(0, Math.min(1, b)))
-      */
+   */
   }
 
-  def xyz2lab(xyz: XYZ): LAB ={
+  def xyz2lab(xyz: XYZ): LAB = {
     var x = xyz.x / 0.95047
     var y = xyz.y / 1.00000
     var z = xyz.z / 1.08883
 
-
-    x = if (x > 0.008856) Math.pow(x, 1.0/3.0) else (7.787 * x) + 16.0/116.0
-    y = if (y > 0.008856) Math.pow(y, 1.0/3.0) else (7.787 * y) + 16.0/116.0
-    z = if (z > 0.008856) Math.pow(z, 1.0/3.0) else (7.787 * z) + 16.0/116.0
+    x = if (x > 0.008856) Math.pow(x, 1.0 / 3.0) else (7.787 * x) + 16.0 / 116.0
+    y = if (y > 0.008856) Math.pow(y, 1.0 / 3.0) else (7.787 * y) + 16.0 / 116.0
+    z = if (z > 0.008856) Math.pow(z, 1.0 / 3.0) else (7.787 * z) + 16.0 / 116.0
 
     LAB((116 * y) - 16, 500 * (x - y), 200 * (y - z))
   }
@@ -173,21 +171,19 @@ object ColorConversions {
     var x = lab.a / 500 + y
     var z = y - lab.b / 200
 
-    x = 0.95047 * (if (x > 0.2068966) x * x * x else (x - 16/116) / 7.787)
-    y = 1.00000 * (if (y  > 0.2068966) y * y * y else (y - 16/116) / 7.787)
-    z = 1.08883 * (if (z  > 0.2068966) z * z * z else  (z - 16/116) / 7.787)
+    x = 0.95047 * (if (x > 0.2068966) x * x * x else (x - 16 / 116) / 7.787)
+    y = 1.00000 * (if (y > 0.2068966) y * y * y else (y - 16 / 116) / 7.787)
+    z = 1.08883 * (if (z > 0.2068966) z * z * z else (z - 16 / 116) / 7.787)
 
-    XYZ(x,y,z)
-
+    XYZ(x, y, z)
 
   }
 
-  def rgb2gray(rgb: RGB): GRAY ={
+  def rgb2gray(rgb: RGB): GRAY = {
     GRAY(0.2125 * rgb.r + 0.7154 * rgb.g + 0.0721 * rgb.b)
   }
 
-
-  def rgb2lab(rgb: RGB): LAB ={
+  def rgb2lab(rgb: RGB): LAB = {
     val xyz = rgb2xyz(rgb)
     xyz2lab(xyz)
   }
@@ -204,112 +200,109 @@ object ColorConversions {
 
     val xyz = rgb2xyz(rgb)
     val rgb2 = xyz2rgb(xyz)
- //   println(rgb + " -> " + xyz + " -> " + rgb2)
-
+    //   println(rgb + " -> " + xyz + " -> " + rgb2)
 
     val lab = rgb2lab(rgb)
     val rgb3 = lab2rgb(lab)
     println(rgb + " -> " + lab + " -> " + rgb3)
   }
 
-
-  def makeRGBArray(red: Array[Double], green: Array[Double], blue: Array[Double]): Array[RGB] ={
+  def makeRGBArray(red: Array[Double],
+                   green: Array[Double],
+                   blue: Array[Double]): Array[RGB] = {
     val n = red.length
     val rgbs = for {
       i <- 0 until n
     } yield {
-     // test(RGB(red(i), green(i), blue(i)))
+      // test(RGB(red(i), green(i), blue(i)))
       RGB(red(i), green(i), blue(i))
     }
     rgbs.toArray
   }
 
-  def rgb2hsv(rgbs: Array[RGB]): Array[HSV] ={
-    val hsvs = for { rgb <- rgbs}
-      yield {
-        val hsv = rgb2hsv(rgb)
-        val rgb2 = hsv2rgb(hsv)
-        if (Math.abs(rgb.r - rgb2.r) > 0.2 || Math.abs(rgb.g - rgb2.g) > 0.2 || Math.abs(rgb.b - rgb2.b) > 0.2) {
-          println("rgb2hsv: " + rgb + " -> " + hsv + " -> " + rgb2)
+  def rgb2hsv(rgbs: Array[RGB]): Array[HSV] = {
+    val hsvs = for { rgb <- rgbs } yield {
+      val hsv = rgb2hsv(rgb)
+      val rgb2 = hsv2rgb(hsv)
+      if (Math.abs(rgb.r - rgb2.r) > 0.2 || Math.abs(rgb.g - rgb2.g) > 0.2 || Math
+            .abs(rgb.b - rgb2.b) > 0.2) {
+       // println("rgb2hsv: " + rgb + " -> " + hsv + " -> " + rgb2)
 
-        }
-        hsv
       }
+      hsv
+    }
     hsvs
   }
 
-  def hsv2rgb(hsvs: Array[HSV]): Array[RGB] ={
-    val rgbs = for { hsv <- hsvs}
-      yield {
-        val rgb = hsv2rgb(hsv)
-        val hsv2 = rgb2hsv(rgb)
-        if (Math.abs(hsv.h - hsv2.h) > 0.2 || Math.abs(hsv.s - hsv2.s) > 0.2 || Math.abs(hsv.v - hsv2.v) > 0.2) {
-         // println("hsv2rgb: " + hsv + " -> " + rgb + " -> " + hsv2)
+  def hsv2rgb(hsvs: Array[HSV]): Array[RGB] = {
+    val rgbs = for { hsv <- hsvs } yield {
+      val rgb = hsv2rgb(hsv)
+      val hsv2 = rgb2hsv(rgb)
+      if (Math.abs(hsv.h - hsv2.h) > 0.2 || Math.abs(hsv.s - hsv2.s) > 0.2 || Math
+            .abs(hsv.v - hsv2.v) > 0.2) {
+        // println("hsv2rgb: " + hsv + " -> " + rgb + " -> " + hsv2)
 
-        }
-        rgb
       }
+      rgb
+    }
     rgbs
   }
 
+  def rgb2xyz(rgbs: Array[RGB]): Array[XYZ] = {
+    val xyzs = for { rgb <- rgbs } yield {
+      val xyz = rgb2xyz(rgb)
+      val rgb2 = xyz2rgb(xyz)
+      if (Math.abs(rgb.r - rgb2.r) > 0.2 || Math.abs(rgb.g - rgb2.g) > 0.2 || Math
+            .abs(rgb.b - rgb2.b) > 0.2) {
+       // println("rgb2xyz: " + rgb + " -> " + xyz + " -> " + rgb2)
 
-  def rgb2xyz(rgbs: Array[RGB]): Array[XYZ] ={
-    val xyzs = for { rgb <- rgbs}
-      yield {
-        val xyz = rgb2xyz(rgb)
-        val rgb2 = xyz2rgb(xyz)
-        if (Math.abs(rgb.r - rgb2.r) > 0.2 || Math.abs(rgb.g - rgb2.g) > 0.2 || Math.abs(rgb.b - rgb2.b) > 0.2) {
-          println("rgb2xyz: " + rgb + " -> " + xyz + " -> " + rgb2)
-
-        }
-        xyz
       }
+      xyz
+    }
     xyzs
   }
 
-  def rgb2lab(rgbs: Array[RGB]): Array[LAB] ={
+  def rgb2lab(rgbs: Array[RGB]): Array[LAB] = {
 
-    val labs = for { rgb <- rgbs}
-      yield {
-        val lab = rgb2lab(rgb)
-        val rgb2 = lab2rgb(lab)
+    val labs = for { rgb <- rgbs } yield {
+      val lab = rgb2lab(rgb)
+      val rgb2 = lab2rgb(lab)
 
-        if (Math.abs(rgb.r - rgb2.r) > 0.2 || Math.abs(rgb.g - rgb2.g) > 0.2 || Math.abs(rgb.b - rgb2.b) > 0.2) {
-          println("rgb2lab: " + rgb + " -> " + lab + " -> " + rgb2)
+      if (Math.abs(rgb.r - rgb2.r) > 0.2 || Math.abs(rgb.g - rgb2.g) > 0.2 || Math
+            .abs(rgb.b - rgb2.b) > 0.2) {
+       // println("rgb2lab: " + rgb + " -> " + lab + " -> " + rgb2)
 
-        }
-        lab
       }
+      lab
+    }
     labs
   }
 
-  def xyz2lab(xyzs: Array[XYZ]): Array[LAB] ={
+  def xyz2lab(xyzs: Array[XYZ]): Array[LAB] = {
 
-    val labs = for { xyz <- xyzs}
-      yield {
-        val lab = xyz2lab(xyz)
-        val xyz2 = lab2xyz(lab)
+    val labs = for { xyz <- xyzs } yield {
+      val lab = xyz2lab(xyz)
+      val xyz2 = lab2xyz(lab)
 
-        if (Math.abs(xyz.x - xyz2.x) > 0.2 || Math.abs(xyz.y - xyz2.y) > 0.2 || Math.abs(xyz.z - xyz2.z) > 0.2) {
-          println("xyz2lab: " + xyz + " -> " + lab + " -> " + xyz2)
+      if (Math.abs(xyz.x - xyz2.x) > 0.2 || Math.abs(xyz.y - xyz2.y) > 0.2 || Math
+            .abs(xyz.z - xyz2.z) > 0.2) {
+       // println("xyz2lab: " + xyz + " -> " + lab + " -> " + xyz2)
 
-        }
-        lab
       }
+      lab
+    }
     labs
   }
 
-  def rgb2gray(rgbs: Array[RGB]): Array[GRAY] ={
+  def rgb2gray(rgbs: Array[RGB]): Array[GRAY] = {
 
-    val grays = for { rgb <- rgbs}
-      yield {
-        val gray = rgb2gray(rgb)
+    val grays = for { rgb <- rgbs } yield {
+      val gray = rgb2gray(rgb)
 
-        gray
-      }
+      gray
+    }
     grays
   }
-
 
   def main(args: Array[String]): Unit = {
 
@@ -323,7 +316,9 @@ object ColorConversions {
 
     val nir_band = original.raster.tile.band(bandsToIndexes('nir))
 
-    val rgbs = makeRGBArray(red_band.toArrayDouble(), green_band.toArrayDouble(), blue_band.toArrayDouble())
+    val rgbs = makeRGBArray(red_band.toArrayDouble(),
+                            green_band.toArrayDouble(),
+                            blue_band.toArrayDouble())
 
   }
 

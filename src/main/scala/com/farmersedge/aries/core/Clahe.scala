@@ -39,7 +39,7 @@ object Clahe {
 
     val vgrid3 = runClahe(vgrid2, shape, kernel_size, clip_limit * nbins, nbins)
 
-    val vgrid4 = vgrid3.map(_.map(x => (x /65535.0).toDouble))
+    val vgrid4 = vgrid3.map(_.map(x => (x / 65535.0).toDouble))
 
     //   val vgrid3 = img_as_double(vgrid2)
     val vgrid5 = rescale_intensity(vgrid4, 1.0)
@@ -73,23 +73,22 @@ object Clahe {
       if (h > clip_limit) true else false
     }
 
-    val excess_mask_hist = hist.zip(excess_mask).collect{case (h, true) => h}
+    val excess_mask_hist = hist.zip(excess_mask).collect { case (h, true) => h }
 
     val excess_sum = excess_mask_hist.sum
 
     var n_excess = excess_sum - excess_mask_hist.size * clip_limit
 
-
     // Second part: clip histogram and redistribute excess pixels in each bin
-    val bin_incr = n_excess.toInt/hist.size  //average binincrement
-    val upper = clip_limit - bin_incr  //Bins larger than upper set to cliplimit
+    val bin_incr = n_excess.toInt / hist.size //average binincrement
+    val upper = clip_limit - bin_incr //Bins larger than upper set to cliplimit
 
     val low_mask = for {
       h <- hist
     } yield {
       if (h < upper) true else false
     }
-    val low_mask_hist = hist.zip(low_mask).collect{case (h, true) => h}
+    val low_mask_hist = hist.zip(low_mask).collect { case (h, true) => h }
 
     val mid_mask = for {
       h <- hist
@@ -97,15 +96,14 @@ object Clahe {
       if (h >= upper && h < clip_limit) true else false
     }
 
-    val mid_mask_hist = hist.zip(mid_mask).collect{case (h, true) => h}
+    val mid_mask_hist = hist.zip(mid_mask).collect { case (h, true) => h }
 
     var clippedHist = for {
       h <- hist
 
     } yield {
-      if (h >= upper) clip_limit.toInt else h+bin_incr
+      if (h >= upper) clip_limit.toInt else h + bin_incr
     }
-
 
     n_excess = n_excess - low_mask_hist.size * bin_incr
     n_excess = n_excess - mid_mask_hist.size * clip_limit - mid_mask_hist.sum
@@ -123,7 +121,8 @@ object Clahe {
         } yield {
           if (h < clip_limit) true else false
         }
-        val clip_mask_hist = clippedHist.zip(clip_mask).collect{case (h, true) => h}
+        val clip_mask_hist =
+          clippedHist.zip(clip_mask).collect { case (h, true) => h }
 
         var step_size = (clip_mask_hist.size / n_excess.toInt)
         step_size = Math.max(step_size, 1)
@@ -133,14 +132,17 @@ object Clahe {
         } yield {
           if (h < 0) true else false
         }
-        for(i <- index until clippedHist.size by step_size) {
+        for (i <- index until clippedHist.size by step_size) {
           under_mask(i) = true
         }
 
-        under_mask = under_mask.zip(clip_mask).collect{case (l,r) => l && r}
+        under_mask = under_mask.zip(clip_mask).collect { case (l, r) => l && r }
 
-        val under_mask_hist = clippedHist.zip(under_mask).collect{case (h, true) => h}
-        clippedHist = clippedHist.zip(under_mask).collect{case (h, u) => if (u) h+1 else h}
+        val under_mask_hist =
+          clippedHist.zip(under_mask).collect { case (h, true) => h }
+        clippedHist = clippedHist.zip(under_mask).collect {
+          case (h, u) => if (u) h + 1 else h
+        }
 
         n_excess = n_excess - under_mask_hist.sum
         index += 1
@@ -150,7 +152,6 @@ object Clahe {
         breakloop = true
       prev_n_excess = n_excess
     }
-
 
     clippedHist
   }
@@ -168,7 +169,7 @@ object Clahe {
     val col_step: Int = (Math.floor(shape._2 / nc)).toInt
 
     val bin_size = 1 + NR_OF_GREY / nbins
-    val lut = (0 until NR_OF_GREY.toInt).map(_/bin_size).map(_.toInt)
+    val lut = (0 until NR_OF_GREY.toInt).map(_ / bin_size).map(_.toInt)
 
     val map_array = Array.ofDim[Int](nr, nc, nbins)
 
@@ -183,7 +184,10 @@ object Clahe {
       val s = clip_limit * col_step.toDouble * row_step.toDouble
       val clim =
         if (clip_limit > 0.0) // Calculate actual cliplimit
-          Math.ceil(clip_limit * col_step.toDouble * row_step.toDouble / nbins.toDouble).toInt
+          Math
+            .ceil(
+              clip_limit * col_step.toDouble * row_step.toDouble / nbins.toDouble)
+            .toInt
         else NR_OF_GREY
 
       val emptyHistogram = (0 until nbins).map(_ -> 0).toMap
@@ -257,7 +261,14 @@ object Clahe {
         val cslice = (cstart until cstart + c_offset by 1d).toArray
         val rslice = (rstart until rstart + r_offset by 1d).toArray
 
-        val newImage = interpolate(image, cslice, rslice, mapLU, mapRU, mapLB, mapRB, lut.toArray)
+        val newImage = interpolate(image,
+                                   cslice,
+                                   rslice,
+                                   mapLU,
+                                   mapRU,
+                                   mapLB,
+                                   mapRB,
+                                   lut.toArray)
 
         //update image with the new interpolated image
 
@@ -265,7 +276,8 @@ object Clahe {
           y <- rslice.indices
           x <- cslice.indices
         } yield {
-          image(rslice(y).toInt)(cslice(x).toInt) = newImage(y.toInt)(x.toInt).toInt
+          image(rslice(y).toInt)(cslice(x).toInt) =
+            newImage(y.toInt)(x.toInt).toInt
         }
 
         cstart += c_offset
@@ -310,7 +322,7 @@ object Clahe {
     four different mappings in order to eliminate boundary artifacts.
      */
 
-    val norm = xslice.size * yslice.size  //Normalization factor
+    val norm = xslice.size * yslice.size //Normalization factor
 
     val meshGrid = for {
       y <- 0 until yslice.size
@@ -322,14 +334,14 @@ object Clahe {
     val x_coef = meshGrid.map(_._1).toArray.grouped(xslice.size).toArray
     val y_coef = meshGrid.map(_._2).toArray.grouped(xslice.size).toArray
 
-    val x_inv_coef = x_coef.map(rows => rows.reverse.map(_+1))
-    val y_inv_coef = y_coef.reverse.map(rows => rows.map(_+1))
+    val x_inv_coef = x_coef.map(rows => rows.reverse.map(_ + 1))
+    val y_inv_coef = y_coef.reverse.map(rows => rows.map(_ + 1))
 
     val view = image
-      .map(_.slice(xslice(0).toInt, xslice.last.toInt+1))
-      .slice(yslice(0).toInt, yslice.last.toInt+1)
+      .map(_.slice(xslice(0).toInt, xslice.last.toInt + 1))
+      .slice(yslice(0).toInt, yslice.last.toInt + 1)
 
-    val im_slice = view.map(_.map(c => (c/65).toInt))
+    val im_slice = view.map(_.map(c => (c / 65).toInt))
 
     val newImage = Array.ofDim[Double](yslice.size, xslice.size)
 
@@ -352,13 +364,12 @@ object Clahe {
     } yield {
       val im_sliceYX = im_slice(y)(x)
 
-
-
-   newImage(y)(x)  = ((y_inv_coef(y)(x) * (x_inv_coef(y)(x) * mapLU(im_sliceYX)
-       + x_coef(y)(x) * mapRU(im_sliceYX))
-       + y_coef(y)(x) * (x_inv_coef(y)(x) * mapLB(im_sliceYX)
-       + x_coef(y)(x) * mapRB(im_sliceYX)))
-       / norm)
+      newImage(y)(x) = ((y_inv_coef(y)(x) * (x_inv_coef(y)(x) * mapLU(
+        im_sliceYX)
+        + x_coef(y)(x) * mapRU(im_sliceYX))
+        + y_coef(y)(x) * (x_inv_coef(y)(x) * mapLB(im_sliceYX)
+          + x_coef(y)(x) * mapRB(im_sliceYX)))
+        / norm)
     }
 
     /*
@@ -395,10 +406,9 @@ object Clahe {
       r <- 0 until shape._1
       c <- 0 until shape._2
     } yield {
-      val k = r * shape._1 + c
-      HSV(hsvs(k).h , hsvs(k).s , vgridout(r)(c))
+      val k = r * shape._2 + c
+      HSV(hsvs(k).h, hsvs(k).s, vgridout(r)(c))
     }
-
 
     ColorConversions.hsv2rgb(hsvsOut.toArray)
   }
