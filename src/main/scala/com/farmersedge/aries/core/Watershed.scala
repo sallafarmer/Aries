@@ -1,9 +1,6 @@
-package com.farmersedge.aries.opencv
+package com.farmersedge.aries.core
 
-import com.farmersedge.aries.core.{GRAY, RGB}
 import com.farmersedge.aries.core.ColorConversions._
-import org.opencv.core.{Core, CvType, Mat, Scalar}
-import org.opencv.imgproc.Imgproc
 
 object Watershed {
 

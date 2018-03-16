@@ -3,7 +3,6 @@ package com.farmersedge.aries.core
 import com.farmersedge.aries.core.CloudMasking.add
 import com.farmersedge.aries.core.ColorConversions._
 import com.farmersedge.aries.core.ZoneProcessor.{bandsToIndexes, ndvi, readTiff}
-import com.farmersedge.aries.opencv.Watershed
 import geotrellis.raster.Tile
 
 import scala.collection.mutable
@@ -174,6 +173,11 @@ object CloudMasking {
     mapBands("blue") = blue_band
     mapBands("nir") = nir_band
     mapBands("ndvi") = ndvi_band
+
+    val cols = mapBands("red").cols
+    val rows = mapBands("red").rows
+
+    implicit val shape: (Int, Int) = (rows, cols)
 
     val optColorSpaceBands = getAllColorSpaceBands(mapBands)
     if (optColorSpaceBands.isEmpty)
@@ -371,7 +375,7 @@ object CloudMasking {
 
   def extractFeatures(cluster_segments: Array[Array[Int]],
                       cluster_list: Array[Int],
-                      c: ColorSpaceBands): Unit = {
+                      c: ColorSpaceBands)(implicit shape: (Int, Int)): Unit = {
 
     val i0 = Array(7, 8, 8, 9, 9, 10, 10, 10, 10)
     val i1 = Array(7, 7, 8, 7, 8, 7, 8, 9, 10)

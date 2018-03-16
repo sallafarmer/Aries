@@ -36,6 +36,7 @@ object CloudMasking_MLP {
     println(xyz)
 
     var claheMat: Mat = new Mat()
+    Imgproc.watershed(rgb, claheMat)
     val claheObj = Imgproc.createCLAHE()
     claheObj.apply(rgb, claheMat)
 
