@@ -35,7 +35,7 @@ object CloudMasking {
   def validateAndGet(bandLabel: String, mapBands: mutable.HashMap[String, Tile])
     : Either[String, Array[Double]] = {
     val orig = mapBands(bandLabel).toArray()
-    val image_band = orig.map(x => if (x<0) 0 else x / 65535.0)
+    val image_band = orig.map(x => if (x < 0) 0 else x / 65535.0)
     val chk = image_band.exists(x => x < 0 || x > 1)
 
     var error_message = ""
@@ -183,7 +183,8 @@ object CloudMasking {
 
     val cluster_list = new ArrayBuffer[Int]()
 
-    val cluster_segments: Array[Array[Int]] = Watershed.run(colorSpaceBands.claheRGB)
+    val cluster_segments: Array[Array[Int]] =
+      Watershed.run(colorSpaceBands.claheRGB)
 
     extractFeatures(cluster_segments, cluster_list.toArray, colorSpaceBands)
 
@@ -226,7 +227,8 @@ object CloudMasking {
     data
   }
 
-  def isNaN(image: Array[Double], reference_image: Array[Double]): Array[Double] = {
+  def isNaN(image: Array[Double],
+            reference_image: Array[Double]): Array[Double] = {
     val outData = for {
       r <- reference_image.indices
       if reference_image(r) != Double.NaN
@@ -357,10 +359,10 @@ object CloudMasking {
              add(subtract(data_rededge, data_red), 1)))
   }
 
-  def get_data_blue(
-      image_blue: Array[Double],
-      indx: Array[Array[Int]],
-      reference_image: Array[Double])(implicit shape: (Int, Int)): Array[Double] = {
+  def get_data_blue(image_blue: Array[Double],
+                    indx: Array[Array[Int]],
+                    reference_image: Array[Double])(
+      implicit shape: (Int, Int)): Array[Double] = {
     val referenceData = extractData1(reference_image, indx(0), indx(1))
     val data_blue = extractData1(image_blue, indx(0), indx(1))
     val filtered_data_blue = isNaN(data_blue, referenceData)
@@ -371,8 +373,8 @@ object CloudMasking {
                       cluster_list: Array[Int],
                       c: ColorSpaceBands): Unit = {
 
-    val i0 = Array(7,8,8,9,9,10,10,10,10)
-    val i1 = Array(7,7,8,7,8,7,8,9,10)
+    val i0 = Array(7, 8, 8, 9, 9, 10, 10, 10, 10)
+    val i1 = Array(7, 7, 8, 7, 8, 7, 8, 9, 10)
     val cluster_indx = Array(i0, i1)
 
     val features = new mutable.HashMap[String, Double]()
@@ -382,20 +384,24 @@ object CloudMasking {
     val data_nir = ret._2
     val data_red = ret._3
 
-    val ret2 = get_EVI(data_nir, data_red, c.image_blue, cluster_indx, c.reference_image)
+    val ret2 =
+      get_EVI(data_nir, data_red, c.image_blue, cluster_indx, c.reference_image)
 
     features("EVI") = ret2._1
     var data_blue = ret2._2
 
     data_blue = get_data_blue(c.image_blue, cluster_indx, c.reference_image)
-    val ret3 = get_CL_green(data_nir, c.image_green, cluster_indx, c.reference_image)
+    val ret3 =
+      get_CL_green(data_nir, c.image_green, cluster_indx, c.reference_image)
     features("CL_green") = ret3._1
     val data_green = ret3._2
 
     features("red_mean") = getMean(cluster_indx, c.image_red, c.reference_image)
-    features("green_mean") = getMean(cluster_indx, c.image_green, c.reference_image)
-    features("blue_mean") = getMean(cluster_indx, c.image_blue, c.reference_image)
-  //  if source == 'RapidEye':
+    features("green_mean") =
+      getMean(cluster_indx, c.image_green, c.reference_image)
+    features("blue_mean") =
+      getMean(cluster_indx, c.image_blue, c.reference_image)
+    //  if source == 'RapidEye':
 //    features['rededge_mean") = getMean(cluster_indx, c.image_rededge, c.reference_image)
     features("nir_mean") = getMean(cluster_indx, c.image_nir, c.reference_image)
 //    features("ndvi_mean") = getMean(cluster_indx, c.image_ndvi, c.reference_image)
@@ -414,12 +420,12 @@ object CloudMasking {
     features("ca_mean") = getMean(cluster_indx, c.image_ca, c.reference_image)
     features("cb_mean") = getMean(cluster_indx, c.image_cb, c.reference_image)
 
-
     features("image_mean_red") = getImageMean(c.image_red, c.reference_image)
-    features("image_mean_green") = getImageMean(c.image_green, c.reference_image)
+    features("image_mean_green") =
+      getImageMean(c.image_green, c.reference_image)
     features("image_mean_blue") = getImageMean(c.image_blue, c.reference_image)
-   // if source == 'RapidEye':
-   // features("image_mean_rededge") = getImageMean(c.image_rededge, c.reference_image)
+    // if source == 'RapidEye':
+    // features("image_mean_rededge") = getImageMean(c.image_rededge, c.reference_image)
     features("image_mean_nir") = getImageMean(c.image_nir, c.reference_image)
     //features("image_mean_ndvi") = getImageMean(c.image_ndvi, c.reference_image)
     //features("image_mean_component0") = getImageMean(image_component0, c.reference_image)
@@ -437,17 +443,19 @@ object CloudMasking {
     features("image_mean_ca") = getImageMean(c.image_ca, c.reference_image)
     features("image_mean_cb") = getImageMean(c.image_cb, c.reference_image)
 
+    features("normalized_R") = mean(
+      divide(data_red, add(add(data_red, data_green), add(data_blue, 1.0))))
+    features("normalized_G") = mean(
+      divide(data_green, add(add(data_red, data_green), add(data_blue, 1.0))))
+    features("normalized_B") = mean(
+      divide(data_blue, add(add(data_red, data_green), add(data_blue, 1.0))))
 
-    features("normalized_R") = mean(divide(data_red, add(add(data_red , data_green), add(data_blue , 1.0))))
-    features("normalized_G") = mean(divide(data_green, add(add(data_red , data_green), add(data_blue , 1.0))))
-    features("normalized_B") = mean(divide(data_blue, add(add(data_red , data_green), add(data_blue , 1.0))))
-
-    features("mean_R_by_B") = mean(divide(data_red, add(data_blue , 1.0)))
+    features("mean_R_by_B") = mean(divide(data_red, add(data_blue, 1.0)))
     // features("mean_R-B") = mean(subtract(data_red, data_blue))
-    features("mean_R_by_B_plus_R") = mean(divide(data_red, add(data_blue, add(data_red, 1.0))))
-  //  features("mean_chroma") = max(np.max(data_red), np.max(data_green), np.max(data_blue)) - \
-  //  min(np.min(data_red), np.min(data_green), np.min(data_blue))
-
+    features("mean_R_by_B_plus_R") = mean(
+      divide(data_red, add(data_blue, add(data_red, 1.0))))
+    //  features("mean_chroma") = max(np.max(data_red), np.max(data_green), np.max(data_blue)) - \
+    //  min(np.min(data_red), np.min(data_green), np.min(data_blue))
 
     features("R-G") = mean(subtract(data_red, data_green))
     features("R-B") = mean(subtract(data_red, data_blue))
@@ -455,7 +463,6 @@ object CloudMasking {
     features("G-B") = mean(subtract(data_green, data_blue))
     features("B-R") = mean(subtract(data_blue, data_red))
     features("B-G") = mean(subtract(data_blue, data_green))
-
 
   }
 
