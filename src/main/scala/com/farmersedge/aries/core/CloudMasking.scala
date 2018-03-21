@@ -45,7 +45,6 @@ object CloudMasking {
       return Left(error_message)
     }
     val within = image_band.count(x => x >= 0 && x <= 1)
-    println("red")
 
     Right(image_band)
   }
@@ -156,7 +155,9 @@ object CloudMasking {
       ))
   }
 
-  def genCloudMask(tiffFile: String): Unit = {
+  def genCloudMask(tiffFile: String): (String, Double) = {
+    val startTime = System.currentTimeMillis()
+
     val original = readTiff(tiffFile)
 
     val red_band = original.raster.tile.band(bandsToIndexes('r))
@@ -181,32 +182,24 @@ object CloudMasking {
 
     val optColorSpaceBands = getAllColorSpaceBands(mapBands)
     if (optColorSpaceBands.isEmpty)
-      return
+      return ("",0)
 
     val colorSpaceBands = optColorSpaceBands.get
 
     val cluster_list = new ArrayBuffer[Int]()
 
-    val cluster_segments: Array[Array[Int]] =
+ /*   val cluster_segments: Array[Array[Int]] =
       Watershed.run(colorSpaceBands.claheRGB)
 
     extractFeatures(cluster_segments, cluster_list.toArray, colorSpaceBands)
-
+*/
     println("done")
+    val endTime = System.currentTimeMillis()
+
+    (s"(${red_band.rows}, ${red_band.cols})", (endTime-startTime).toDouble/1000)
   }
 
-  def toMatrix(in: Array[Int], shape: (Int, Int)): Array[Array[Int]] = {
-    val mat = Array.ofDim[Int](shape._1, shape._2)
 
-    for {
-      r <- 0 until shape._1
-      c <- 0 until shape._2
-    } yield {
-      val k = r * shape._2 + c
-      mat(r)(c) = in(k)
-    }
-    mat
-  }
 
   def extractData2(image: Array[Array[Int]],
                    indx0: Array[Int],

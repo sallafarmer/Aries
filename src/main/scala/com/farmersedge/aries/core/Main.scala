@@ -25,8 +25,20 @@ object Main {
 
     val startTime = System.currentTimeMillis()
 
-    CloudMasking.genCloudMask(tiffFile)
+    for (i <- 0 to 2) {
+      tiffFile = "data/20170609_174033_1041_3B_AnalyticMS_TOA_clip_Cloudy_image.tif"
+      var ret = CloudMasking.genCloudMask(tiffFile)
+      println(s"$tiffFile,${ret._1},${ret._2},sec")
 
+      tiffFile = "data/20170609_174033_1041_3B_AnalyticMS_TOA_clip_Cloudy2.tif"
+      ret = CloudMasking.genCloudMask(tiffFile)
+      println(s"$tiffFile,${ret._1},${ret._2},sec")
+
+      tiffFile = "data/20170609_174033_1041_3B_AnalyticMS_TOA_clip_cloudy3.tif"
+      ret = CloudMasking.genCloudMask(tiffFile)
+      println(s"$tiffFile,${ret._1},${ret._2},sec")
+
+    }
     val endTime = System.currentTimeMillis()
     println(endTime- startTime)
 
