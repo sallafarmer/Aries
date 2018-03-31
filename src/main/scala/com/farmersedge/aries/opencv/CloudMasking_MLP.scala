@@ -99,8 +99,8 @@ object CloudMasking_MLP {
     val result = segmenter.process(rgba)
 
 
-    val claheObj = Imgproc.createCLAHE()
-    claheObj.apply(rgb, claheMat)
+//    val claheObj = Imgproc.createCLAHE()
+//    claheObj.apply(rgb, claheMat)
 
     println(claheMat)
     //CvType

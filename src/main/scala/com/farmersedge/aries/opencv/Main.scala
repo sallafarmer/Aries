@@ -4,7 +4,7 @@ import org.opencv.core.Core
 
 object Main {
 
-  System.loadLibrary(Core.NATIVE_LIBRARY_NAME)
+//  System.loadLibrary(Core.NATIVE_LIBRARY_NAME)
 
   def main(args: Array[String]): Unit = {
 
