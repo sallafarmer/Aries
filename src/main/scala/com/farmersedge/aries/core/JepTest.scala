@@ -111,7 +111,10 @@ object JepTest {
         band
           .convert(DoubleCellType)
           .combineDouble(maskTile)((b, m) => {
-            b
+            if (m >0.0)
+              0.0
+            else
+              b
           })
           .convert(UShortCellType)
       })
@@ -120,8 +123,8 @@ object JepTest {
 /*    val x = shadowLayerMask.getData().count(_ == true)
     val y = cloudLayerMask.getData().count(_ == true)
     val z = mask.count(_ > 0)
-
-    val v = for { b <- original.tile.bands } yield { b.toArray().filter(_ > 0) }
+*/
+ /*   val v = for { b <- original.tile.bands } yield { b.toArray().filter(_ > 0) }
 
     val v2 = for { b <- modifiedTile.tile.bands } yield {
       b.toArray().filter(_ > 0)
