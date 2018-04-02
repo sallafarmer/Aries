@@ -39,7 +39,6 @@ libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-log4j12" % "1.7.25" % "provided",
 
   "black.ninia" % "jep" % "3.7.1"
-
 )
 
 dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-core" % "2.8.7"
